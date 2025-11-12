@@ -1,0 +1,93 @@
+<app-toast></app-toast>
+
+@switch (mode()) {
+  @case ('home') {
+    <div class="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-gray-900">
+      <header class="text-center mb-12">
+        <h1 class="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+          AI 创意工作台
+        </h1>
+        <p class="mt-4 text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
+          选择一个模式开始创作。无论是从零开始，还是在现有基础上编辑，AI 都能助您一臂之力。
+        </p>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-5xl">
+        <!-- Image Edit Card -->
+        <div (click)="changeMode('edit')" class="group relative bg-gray-800/50 p-8 rounded-2xl border border-gray-700 hover:border-purple-500 transition-all duration-300 cursor-pointer overflow-hidden">
+          <div class="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+          <div class="relative z-10">
+            <div class="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mb-4">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536l12.232-12.232z" />
+              </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-100 mb-2">图像编辑</h2>
+            <p class="text-gray-400">上传图片，通过对话式指令进行修改、优化或风格转换。</p>
+          </div>
+        </div>
+
+        <!-- Text-to-Image Card -->
+        <div (click)="changeMode('text2img')" class="group relative bg-gray-800/50 p-8 rounded-2xl border border-gray-700 hover:border-pink-500 transition-all duration-300 cursor-pointer overflow-hidden">
+          <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+          <div class="relative z-10">
+            <div class="w-16 h-16 bg-gradient-to-br from-pink-600 to-orange-500 rounded-xl flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-100 mb-2">文生图</h2>
+            <p class="text-gray-400">将您的想象力转化为文字，AI 会为您生成独一无二的图像。</p>
+          </div>
+        </div>
+
+        <!-- Image Remix Card -->
+        <div (click)="changeMode('remix')" class="group relative bg-gray-800/50 p-8 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all duration-300 cursor-pointer overflow-hidden">
+           <div class="absolute -top-10 -left-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+          <div class="relative z-10">
+            <div class="w-16 h-16 bg-gradient-to-br from-cyan-600 to-blue-600 rounded-xl flex items-center justify-center mb-4">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+               </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-100 mb-2">图像融合</h2>
+            <p class="text-gray-400">提取一张图的内容和另一张图的风格，创造全新艺术作品。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+  @case ('edit') {
+    <div class="relative min-h-screen lg:h-screen lg:overflow-hidden flex flex-col">
+       <button (click)="changeMode('home')" class="absolute top-4 left-4 z-20 flex items-center gap-2 text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/70 px-4 py-2 rounded-lg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+          </svg>
+          返回主页
+       </button>
+      <app-image-editor></app-image-editor>
+    </div>
+  }
+  @case ('text2img') {
+     <div class="relative min-h-screen lg:h-screen lg:overflow-hidden flex flex-col">
+       <button (click)="changeMode('home')" class="absolute top-4 left-4 z-20 flex items-center gap-2 text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/70 px-4 py-2 rounded-lg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+          </svg>
+          返回主页
+       </button>
+      <app-text-to-image></app-text-to-image>
+    </div>
+  }
+  @case ('remix') {
+     <div class="relative min-h-screen lg:h-screen lg:overflow-hidden flex flex-col">
+       <button (click)="changeMode('home')" class="absolute top-4 left-4 z-20 flex items-center gap-2 text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/70 px-4 py-2 rounded-lg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+          </svg>
+          返回主页
+       </button>
+      <app-image-remix></app-image-remix>
+    </div>
+  }
+}

@@ -1,0 +1,173 @@
+<div class="w-full h-full flex flex-col lg:grid lg:grid-cols-3 bg-gray-900 text-gray-100 font-sans overflow-hidden">
+  <!-- Image Display Area -->
+  <div class="lg:col-span-2 w-full h-full flex items-center justify-center p-4 relative bg-black/20">
+    <div class="w-full max-w-4xl aspect-video flex items-center justify-center relative">
+       @if (generatedImageUrl()) {
+          <img [src]="generatedImageUrl()" alt="AI 生成的图像" class="w-full h-full object-contain rounded-lg shadow-2xl">
+           <button (click)="downloadImage()" class="absolute bottom-4 right-4 z-10 flex items-center gap-2 text-gray-200 bg-gray-900/60 hover:bg-gray-800/80 px-4 py-2 rounded-lg transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 9.707a1 1 0 011.414 0L9 11.086V3a1 1 0 112 0v8.086l1.293-1.379a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" /></svg>
+            下载图像
+          </button>
+      } @else {
+        <div class="w-full h-full bg-gray-800/50 rounded-2xl flex items-center justify-center border border-gray-700">
+          <div class="text-center text-gray-500 p-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <h3 class="text-xl font-semibold text-gray-300">您创作的作品将在此呈现</h3>
+            <p class="mt-1 text-sm">输入描述并点击生成，见证魔法的诞生。</p>
+          </div>
+        </div>
+      }
+      @if(isLoading()) {
+          <div class="absolute inset-0 bg-gray-900/80 flex flex-col items-center justify-center z-20">
+              <svg class="animate-spin h-10 w-10 text-purple-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="text-white font-medium">生成中，请稍候...</p>
+          </div>
+      }
+    </div>
+  </div>
+
+  <!-- Controls Sidebar -->
+  <div class="lg:col-span-1 w-full h-full bg-gray-800/50 border-l border-gray-700 flex flex-col overflow-hidden">
+    <div class="p-4 border-b border-gray-700 flex-shrink-0">
+      <h2 class="text-xl font-bold">文生图</h2>
+    </div>
+    <div class="flex-grow p-4 flex flex-col gap-6 overflow-y-auto min-h-0">
+       <div>
+        <label for="prompt" class="block text-sm font-medium text-gray-300 mb-2">1. 描述您的画面</label>
+        <div class="relative">
+          <textarea 
+            id="prompt" 
+            rows="6" 
+            class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 pr-28 text-gray-200 focus:ring-purple-500 focus:border-purple-500 transition" 
+            placeholder="例如：一只宇航员猫在太空中漂浮，背景是绚丽的星云..."
+            [value]="prompt()"
+            (input)="updatePrompt($event, 'positive')"></textarea>
+           <button 
+              (click)="optimizePrompt()" 
+              [disabled]="!prompt() || isOptimizingPrompt() || isLoading()"
+              class="absolute top-2.5 right-2.5 text-sm text-purple-400 hover:text-purple-300 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 bg-gray-800/50 hover:bg-gray-700/70 px-2 py-1 rounded-md">
+                @if (isOptimizingPrompt()) {
+                  <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <span>优化中...</span>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M12.9 4.3a1 1 0 011.4 1.4l-1.3 1.3a1 1 0 01-1.4 0l-1.3-1.3a1 1 0 011.4-1.4l.6.6.6-.6zM10 8a1 1 0 011 1v1.58l1.7 1.7a1 1 0 01-1.4 1.4l-1.3-1.3a1 1 0 010-1.4l-1.3-1.3a1 1 0 011.4-1.4l1.3 1.3V9a1 1 0 011-1zM7.1 4.3a1 1 0 011.4-1.4l.6.6.6-.6a1 1 0 011.4 1.4l-1.3 1.3a1 1 0 01-1.4 0L7.1 5.7a1 1 0 010-1.4zM4.3 7.1a1 1 0 011.4 0l1.3 1.3a1 1 0 010 1.4L5.7 11.2a1 1 0 01-1.4-1.4l.6-.6-.6-.6a1 1 0 010-1.4zM10 12a1 1 0 01-1-1v-1.58l-1.7-1.7a1 1 0 011.4-1.4l1.3 1.3a1 1 0 010 1.4l1.3 1.3a1 1 0 01-1.4 1.4l-1.3-1.3V11a1 1 0 01-1 1zm2.9 4.3a1 1 0 01-1.4-1.4l1.3-1.3a1 1 0 011.4 0l1.3 1.3a1 1 0 01-1.4 1.4l-.6-.6-.6.6zM12.9 7.1a1 1 0 010 1.4l-1.3 1.3a1 1 0 01-1.4 0L8.8 8.5a1 1 0 011.4-1.4l.6.6.6-.6a1 1 0 011.4 0zM7.1 12.9a1 1 0 010-1.4l1.3-1.3a1 1 0 011.4 0l1.3 1.3a1 1 0 01-1.4 1.4l-.6-.6-.6.6a1 1 0 01-1.4 0zM15.7 7.1a1 1 0 010 1.4l-.6.6.6.6a1 1 0 01-1.4 1.4l-1.3-1.3a1 1 0 010-1.4l1.3-1.3a1 1 0 011.4 0z"/></svg>
+                  <span>魔术提示词</span>
+                }
+            </button>
+        </div>
+      </div>
+
+       <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">2. 参考角色 (可选)</label>
+        <div 
+            (dragover)="$event.preventDefault(); isDraggingReference.set(true)" 
+            (dragleave)="isDraggingReference.set(false)" 
+            (drop)="onReferenceFileDrop($event)"
+            class="w-full aspect-video bg-gray-900/50 flex items-center justify-center border-2 border-dashed rounded-lg transition-colors relative"
+            [class.border-purple-500]="isDraggingReference()"
+            [class.bg-gray-800/50]="isDraggingReference()"
+            [class.border-gray-600]="!isDraggingReference()">
+          @if(referenceImageUrl()) {
+            <img [src]="referenceImageUrl()" alt="参考角色预览" class="w-full h-full object-contain rounded-lg">
+            <button (click)="clearReferenceImage()" class="absolute top-2 right-2 p-1.5 bg-gray-900/60 hover:bg-gray-800/80 rounded-full transition-colors" title="移除参考图">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          } @else {
+            <label for="reference-upload" class="text-center p-4 text-gray-500 cursor-pointer w-full h-full flex flex-col items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+              <span class="text-sm font-medium">上传参考图</span>
+              <span class="text-xs mt-1">拖放或点击上传 (最大 5MB)</span>
+            </label>
+          }
+        </div>
+        <input id="reference-upload" type="file" class="sr-only" (change)="onReferenceFileSelected($event)" accept="image/png, image/jpeg">
+      </div>
+
+       <div>
+        <label for="negative-prompt" class="block text-sm font-medium text-gray-300 mb-2">3. 负向提示词 (不希望出现的内容)</label>
+        <textarea 
+          id="negative-prompt" 
+          rows="3" 
+          class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-gray-200 focus:ring-purple-500 focus:border-purple-500 transition" 
+          placeholder="例如：模糊, 多余的手指, 画质差"
+          [value]="negativePrompt()"
+          (input)="updatePrompt($event, 'negative')"></textarea>
+      </div>
+      
+       <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">4. 宽高比</label>
+        <div class="grid grid-cols-3 gap-2 text-sm font-medium">
+          <button (click)="aspectRatio.set('1:1')" [class.bg-purple-600]="aspectRatio() === '1:1'" [class.bg-gray-700]="aspectRatio() !== '1:1'" class="py-2 rounded-md hover:bg-purple-500 transition-colors">方案 (方形)</button>
+          <button (click)="aspectRatio.set('16:9')" [class.bg-purple-600]="aspectRatio() === '16:9'" [class.bg-gray-700]="aspectRatio() !== '16:9'" class="py-2 rounded-md hover:bg-purple-500 transition-colors">横向 (16:9)</button>
+          <button (click)="aspectRatio.set('9:16')" [class.bg-purple-600]="aspectRatio() === '9:16'" [class.bg-gray-700]="aspectRatio() !== '9:16'" class="py-2 rounded-md hover:bg-purple-500 transition-colors">纵向 (9:16)</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">5. 艺术风格</label>
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          @for (style of styles; track style.name) {
+            <div (click)="selectStyle(style)" class="relative cursor-pointer group rounded-lg overflow-hidden aspect-square transition-transform transform hover:scale-105">
+              <img 
+                [src]="style.imageUrl" 
+                [alt]="style.name" 
+                class="w-full h-full object-cover transition-all duration-300"
+                [class.grayscale]="selectedStyle() && selectedStyle()!.name !== style.name">
+              <div class="absolute inset-0 bg-black/40 group-hover:bg-black/60 flex items-center justify-center p-1 transition-all duration-300">
+                <span class="text-white font-semibold text-xs text-center">{{ style.name }}</span>
+              </div>
+              @if (selectedStyle()?.name === style.name) {
+                <div class="absolute inset-0 ring-2 ring-offset-2 ring-offset-gray-800 ring-purple-500 rounded-lg pointer-events-none"></div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">6. 专业参数</label>
+        <div class="flex items-center gap-2">
+            <input 
+              type="number"
+              placeholder="随机种子"
+              [value]="seed() ?? ''"
+              (input)="updateSeed($event)"
+              class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-gray-200 focus:ring-purple-500 focus:border-purple-500 transition" />
+            <button (click)="randomizeSeed()" class="p-2 bg-gray-700 hover:bg-purple-600/50 rounded-lg transition-colors" title="随机生成种子">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M13.5 6.002a3.5 3.5 0 00-4.333-3.415 3.5 3.5 0 00-2.83 5.586 3.5 3.5 0 005.47 2.427 3.502 3.502 0 001.693-4.598zm-1.125 2.86a2.5 2.5 0 01-3.8-2.203.5.5 0 00-.416-.583 2.5 2.5 0 013.416-3.416.5.5 0 00.583.416 2.5 2.5 0 012.203 3.8.5.5 0 00-.416.583 2.487 2.487 0 01-1.57.403z" />
+                <path d="M5.5 13.528a3.5 3.5 0 014.333 3.415 3.5 3.5 0 01-5.47-2.427A3.5 3.5 0 012.67 9.919a3.5 3.5 0 011.693 4.598zm1.125-2.86a2.5 2.5 0 00-3.8 2.203.5.5 0 01.416.583 2.5 2.5 0 003.416 3.416.5.5 0 01-.583-.416 2.5 2.5 0 00-2.203-3.8.5.5 0 01.416-.583 2.487 2.487 0 001.335-.403z" />
+              </svg>
+            </button>
+        </div>
+      </div>
+
+    </div>
+    <div class="p-4 border-t border-gray-700 bg-gray-800 flex-shrink-0">
+      <button 
+        (click)="generateImage()" 
+        [disabled]="!prompt() || isLoading() || isOptimizingPrompt()"
+        class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 hover:brightness-110 disabled:transform-none">
+        @if (isLoading()) {
+          <div class="flex items-center justify-center">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span>生成中...</span>
+          </div>
+        } @else {
+          <span class="flex items-center justify-center gap-2">
+            ✨ 生成图像
+          </span>
+        }
+      </button>
+    </div>
+  </div>
+</div>
