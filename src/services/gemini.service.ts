@@ -1,6 +1,7 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, effect } from '@angular/core';
 import { GoogleGenAI } from '@google/genai';
 import { ToastService } from './toast.service';
+import { ApiKeyService } from './api-key.service';
 
 // This is a placeholder for the environment variable.
 declare var process: any;
@@ -10,22 +11,69 @@ declare var process: any;
 })
 export class GeminiService {
   private toastService = inject(ToastService);
-  private ai: GoogleGenAI | null = null;
+  private apiKeyService = inject(ApiKeyService);
+  ai: GoogleGenAI | null = null;
+  isInitialized = signal(false);
 
   constructor() {
-    try {
-      if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-        this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Attempt to initialize from environment variable first
+    let apiKey: string | null = null;
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      apiKey = process.env.API_KEY;
+      this.apiKeyService.setApiKey(apiKey); // Store it for consistency
+    } else {
+      apiKey = this.apiKeyService.apiKey();
+    }
+
+    if (apiKey) {
+      this.initialize(apiKey);
+    } else {
+      console.log("No API key found. Waiting for user input.");
+      this.apiKeyService.openModal();
+    }
+
+    // Effect to re-initialize when API key changes
+    effect(() => {
+      const newApiKey = this.apiKeyService.apiKey();
+      if (newApiKey) {
+        // Avoid re-initializing with the same key if already initialized
+        if (!this.ai || !this.isInitialized()) {
+           this.initialize(newApiKey);
+        }
       } else {
-        throw new Error("API_KEY environment variable not found.");
+        this.ai = null;
+        this.isInitialized.set(false);
       }
+    });
+  }
+
+  private initialize(apiKey: string): void {
+    try {
+      if (!apiKey) {
+        throw new Error("API key is empty.");
+      }
+      this.ai = new GoogleGenAI({ apiKey });
+      this.isInitialized.set(true);
+      console.log("Gemini Service Initialized");
     } catch (e: any) {
-      const message = e.message || "Failed to initialize the AI service. Please ensure the API key is set.";
+      const message = e.message || "初始化AI服务失败。请检查您的API密钥是否有效。";
       console.error("Failed to initialize GoogleGenAI:", e);
       this.toastService.showError(message);
+      this.apiKeyService.clearApiKey();
+      this.apiKeyService.openModal();
+      this.isInitialized.set(false);
     }
   }
 
+  private checkInitialization(): boolean {
+    if (!this.ai || !this.isInitialized()) {
+      this.toastService.showError("AI服务未初始化。请输入您的API密钥。");
+      this.apiKeyService.openModal();
+      return false;
+    }
+    return true;
+  }
+  
   private async fileToBase64(file: File): Promise<{base64: string, mimeType: string}> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -41,17 +89,15 @@ export class GeminiService {
   }
 
   private async describeImage(imageFile: File, systemInstruction: string): Promise<string | null> {
-    if (!this.ai) {
-      this.toastService.showError("AI服务未初始化。");
-      return null;
-    }
+    if (!this.checkInitialization()) return null;
+
     try {
       const { base64, mimeType } = await this.fileToBase64(imageFile);
       const imagePart = {
         inlineData: { mimeType, data: base64 },
       };
       
-      const response = await this.ai.models.generateContent({
+      const response = await this.ai!.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: { parts: [imagePart] },
         config: { systemInstruction }
@@ -66,12 +112,10 @@ export class GeminiService {
   }
 
   async optimizePrompt(currentPrompt: string): Promise<string | null> {
-    if (!this.ai) {
-        this.toastService.showError("AI服务未初始化。请检查API密钥。");
-        return null;
-    }
+    if (!this.checkInitialization()) return null;
+
     try {
-      const response = await this.ai.models.generateContent({
+      const response = await this.ai!.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: currentPrompt,
         config: {
@@ -88,12 +132,10 @@ export class GeminiService {
   }
 
   private async translateToEnglish(text: string): Promise<string | null> {
-    if (!this.ai) {
-        this.toastService.showError("AI服务未初始化。");
-        return null;
-    }
+    if (!this.checkInitialization()) return null;
+
     try {
-        const response = await this.ai.models.generateContent({
+        const response = await this.ai!.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: text,
             config: {
@@ -117,10 +159,7 @@ export class GeminiService {
     referenceImageFile?: File | null,
     seed?: number | null
   ): Promise<string | null> {
-    if (!this.ai) {
-        this.toastService.showError("AI服务未初始化。请检查API密钥。");
-        return null;
-    }
+    if (!this.checkInitialization()) return null;
 
     try {
         let finalChinesePrompt = prompt;
@@ -162,7 +201,7 @@ export class GeminiService {
         if (aspectRatio) imageConfig.aspectRatio = aspectRatio;
         if (seed) imageConfig.seed = seed;
 
-        const imageResponse = await this.ai.models.generateImages({
+        const imageResponse = await this.ai!.models.generateImages({
             model: 'imagen-4.0-generate-001',
             prompt: finalEnglishPrompt,
             config: imageConfig,
@@ -194,10 +233,7 @@ export class GeminiService {
     // Note: The gemini-2.5-flash-image model used for inpainting doesn't
     // currently support a seed parameter in the same way imagen does.
     // The parameter is included for signature consistency but is unused in the API call.
-    if (!this.ai) {
-        this.toastService.showError("AI服务未初始化。请检查API密钥。");
-        return null;
-    }
+    if (!this.checkInitialization()) return null;
 
     try {
       let finalChinesePrompt = editPrompt;
@@ -234,7 +270,7 @@ export class GeminiService {
         contents.push(maskPart);
       }
       
-      const response = await this.ai.models.generateContent({
+      const response = await this.ai!.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: contents,
       });
@@ -263,7 +299,7 @@ export class GeminiService {
             const descImagePart = { inlineData: { mimeType: newMimeType, data: newImageBase64 } };
             const descTextPart = { text: descriptionPrompt };
 
-            const descriptionResponse = await this.ai.models.generateContent({
+            const descriptionResponse = await this.ai!.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: { parts: [descTextPart, descImagePart] }
             });
@@ -298,6 +334,8 @@ export class GeminiService {
       aspectRatio?: string | null,
       seed?: number | null
   ): Promise<string | null> {
+      if (!this.checkInitialization()) return null;
+      
       try {
         const contentInstruction = "你是一个图像分析专家。请用简洁的名词短语描述这张图片的主要内容。例如：'一只狗在公园里'或'一个山顶上的城堡'。";
         const contentDescription = await this.describeImage(contentFile, contentInstruction);
